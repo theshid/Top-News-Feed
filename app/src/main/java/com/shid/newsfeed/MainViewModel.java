@@ -11,25 +11,38 @@ import com.shid.newsfeed.Models.Article;
 public class MainViewModel extends ViewModel {
 
     //creating livedata for PagedList  and PagedKeyedDataSource
-    LiveData<PagedList<Article>> articlePagedList;
+    LiveData articlePagedList;
     LiveData<PageKeyedDataSource<Integer, Article>> liveDataSource;
+    //getting our data source factory
+    ArticleDataSourceFactory articleDataSourceFactory ;
+    PagedList.Config pagedListConfig;
 
     //constructor
     public MainViewModel() {
-        //getting our data source factory
-        ArticleDataSourceFactory itemDataSourceFactory = new ArticleDataSourceFactory();
+        articleDataSourceFactory = new ArticleDataSourceFactory();
 
         //getting the live data source from data source factory
-        liveDataSource = itemDataSourceFactory.getArticleLiveDataSource();
+        liveDataSource = articleDataSourceFactory.getArticleLiveDataSource();
 
         //Getting PagedList config
-        PagedList.Config pagedListConfig =
+         pagedListConfig =
                 (new PagedList.Config.Builder())
                         .setEnablePlaceholders(false)
                         .setPageSize(ArticleDataSource.PAGE_SIZE).build();
 
         //Building the paged list
-        articlePagedList = (new LivePagedListBuilder(itemDataSourceFactory, pagedListConfig))
+        articlePagedList = (new LivePagedListBuilder(articleDataSourceFactory, pagedListConfig))
+                .build();
+    }
+
+    public void refresh(){
+        articleDataSourceFactory.getArticleLiveDataSource().getValue().invalidate();
+        //Getting PagedList config
+        pagedListConfig =
+                (new PagedList.Config.Builder())
+                        .setEnablePlaceholders(false)
+                        .setPageSize(ArticleDataSource.PAGE_SIZE).build();
+        articlePagedList = new LivePagedListBuilder(articleDataSourceFactory, pagedListConfig)
                 .build();
     }
 }

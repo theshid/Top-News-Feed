@@ -34,6 +34,7 @@ import com.shid.newsfeed.Api.ApiInterface;
 import com.shid.newsfeed.Models.Article;
 import com.shid.newsfeed.Models.News;
 import com.shid.newsfeed.UI.NewsDetailActivity;
+import com.shid.newsfeed.Utils.Constant;
 import com.shid.newsfeed.Utils.Utils;
 
 import java.util.ArrayList;
@@ -48,6 +49,10 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static com.shid.newsfeed.Utils.Constant.ERROR;
+import static com.shid.newsfeed.Utils.Constant.FAILURE;
+import static com.shid.newsfeed.Utils.Constant.SUCCESS;
 
 public class MainActivity extends AppCompatActivity implements  SwipeRefreshLayout.OnRefreshListener,
 ArticleAdapter.ItemAction{
@@ -64,6 +69,7 @@ ArticleAdapter.ItemAction{
     private ImageView errorImage;
     private TextView errorTitle, errorMessage;
     private Button btnRetry;
+    private MainViewModel mainViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,14 +95,18 @@ ArticleAdapter.ItemAction{
         errorMessage = findViewById(R.id.errorMessage);
         btnRetry = findViewById(R.id.btnRetry);
 
-        MainViewModel mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
         ArticleAdapter articleAdapter = new ArticleAdapter(this);
         articleAdapter.setItemOnClickAction(this);
 
         mainViewModel.articlePagedList.observe(this, new Observer<PagedList<Article>>() {
             @Override
             public void onChanged(PagedList<Article> articles) {
+
                 articleAdapter.submitList(articles);
+                setUiBasedOnStatus(ArticleDataSource.status);
+
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
 
@@ -259,15 +269,20 @@ ArticleAdapter.ItemAction{
 
     @Override
     public void onRefresh() {
+
+        mainViewModel.refresh();
        // LoadJson("");
     }
 
     private void onLoadingSwipeRefresh(final String keyword){
 
+        ArticleDataSource.keyword = keyword;
         swipeRefreshLayout.post(
                 new Runnable() {
                     @Override
                     public void run() {
+                        //swipeRefreshLayout.setRefreshing(true);
+                        mainViewModel.refresh();
                        // LoadJson(keyword);
                     }
                 }
@@ -288,6 +303,8 @@ ArticleAdapter.ItemAction{
         btnRetry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                swipeRefreshLayout.setRefreshing(true);
+                errorLayout.setVisibility(View.GONE);
                 onLoadingSwipeRefresh("");
             }
         });
@@ -320,6 +337,44 @@ ArticleAdapter.ItemAction{
             startActivity(intent, optionsCompat.toBundle());
         }else {
             startActivity(intent);
+        }
+    }
+
+    private void setUiBasedOnStatus(String value) {
+        switch (value) {
+            case SUCCESS:
+                Log.d(TAG,"error is : "+ ArticleDataSource.errorCode);
+                Log.d(TAG,"status is: " + ArticleDataSource.status);
+                topHeadline.setVisibility(View.VISIBLE);
+                swipeRefreshLayout.setRefreshing(false);
+                ArticleDataSource.status = "";
+                break;
+            case FAILURE:
+                Log.d(TAG,"error is : "+ ArticleDataSource.errorCode);
+                Log.d(TAG,"status is: " + ArticleDataSource.status);
+                topHeadline.setVisibility(View.INVISIBLE);
+                swipeRefreshLayout.setRefreshing(false);
+                ArticleDataSource.status = "";
+                showErrorMessage(
+                        R.drawable.oops,
+                        "Oops..",
+                        "Network failure, Please Try Again\n"+
+                                ArticleDataSource.errorCode);
+                break;
+            case ERROR:
+                Log.d(TAG,"error is : "+ ArticleDataSource.errorCode);
+                Log.d(TAG,"status is: " + ArticleDataSource.status);
+                topHeadline.setVisibility(View.INVISIBLE);
+                ArticleDataSource.status = "";
+                swipeRefreshLayout.setRefreshing(false);
+                showErrorMessage(
+                        R.drawable.no_result,
+                        "No Result",
+                        "Please Try Again!\n"+
+                                ArticleDataSource.errorCode);
+                break;
+            default:break;
+
         }
     }
 }

@@ -13,6 +13,12 @@ import java.util.Random;
 
 public class Utils {
 
+
+
+    public enum Status{
+        SUCCESS,FAILURE,LOADING
+    }
+
     public static ColorDrawable[] vibrantLightColorList =
             {
                     new ColorDrawable(Color.parseColor("#ffeead")),

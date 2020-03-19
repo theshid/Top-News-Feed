@@ -104,7 +104,7 @@ public class ArticleAdapter extends PagedListAdapter<Article, ArticleAdapter.Art
             new DiffUtil.ItemCallback<Article>() {
                 @Override
                 public boolean areItemsTheSame(@NonNull Article oldItem, @NonNull Article newItem) {
-                    return oldItem.getSource().getId().equals(newItem.getSource().getId());
+                    return oldItem.getPublishedAt().equals(newItem.getPublishedAt());
                 }
 
                 @SuppressLint("DiffUtilEquals")
